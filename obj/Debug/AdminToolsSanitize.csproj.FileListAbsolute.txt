@@ -1,0 +1,10 @@
+C:\Users\aviat\source\repos\AdminToolsSanitize\bin\Debug\AdminToolsSanitize.dll
+C:\Users\aviat\source\repos\AdminToolsSanitize\bin\Debug\AdminToolsSanitize.pdb
+C:\Users\aviat\source\repos\AdminToolsSanitize\bin\Debug\0Harmony.dll
+C:\Users\aviat\source\repos\AdminToolsSanitize\bin\Debug\0Harmony.xml
+C:\Users\aviat\source\repos\AdminToolsSanitize\obj\Debug\AdminToolsSanitize.csprojAssemblyReference.cache
+C:\Users\aviat\source\repos\AdminToolsSanitize\obj\Debug\AdminToolsSanitize.csproj.CoreCompileInputs.cache
+C:\Users\aviat\source\repos\AdminToolsSanitize\obj\Debug\AdminToolsSanitize.csproj.CopyComplete
+C:\Users\aviat\source\repos\AdminToolsSanitize\obj\Debug\AdminToolsSanitize.dll
+C:\Users\aviat\source\repos\AdminToolsSanitize\obj\Debug\AdminToolsSanitize.pdb
+C:\Users\aviat\source\repos\AdminToolsSanitize\bin\Debug\Modinfo.xml
