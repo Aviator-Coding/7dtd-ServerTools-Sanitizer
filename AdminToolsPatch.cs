@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security;
@@ -8,6 +8,25 @@ namespace AdminToolsSanitize
     [HarmonyPatch(typeof(AdminTools))]
     class AdminToolsPatch
     {
+        /// <summary>
+        /// 7 Days to die will write an invalid XML File if 
+        /// Player Name or Ban Reason Holds any of these character <>"'&
+        /// This Mod Filters out the Character adn translates them so the xml will
+        /// not be invalid on Read after the Next Restart
+        /// <    &lt;
+        /// >    &gt;
+        /// "    &quot;
+        /// '    &apos;
+        /// &    &amp;
+        /// </summary>
+        /// <param name="__instance">AdminTools __instance</param>
+        /// <param name="___userPermissions">userpermission from the AdminTools.userPermissions</param>
+        /// <param name="___groupPermissions">userpermission from the AdminTools.groupPermissions</param>
+        /// <param name="___whitelistedUsers">userpermission from the AdminTools.whitelistedUsers</param>
+        /// <param name="___whitelistedGroups">userpermission from the AdminTools.whitelistedGroups</param>
+        /// <param name="___bannedUsers">userpermission from the AdminTools.bannedUsers</param>
+        /// <param name="___commands">userpermission from the AdminTools.commands</param>
+        /// <returns></returns>
         [HarmonyPrefix]
         [HarmonyPatch("Save")]
         public static bool Save_CleanUp(AdminTools __instance,
