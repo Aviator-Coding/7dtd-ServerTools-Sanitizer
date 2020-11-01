@@ -68,6 +68,7 @@
     <Compile Include="Api.cs" />
     <Compile Include="Patch.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="WorldPatch.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
