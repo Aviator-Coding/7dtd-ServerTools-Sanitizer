@@ -66,6 +66,7 @@
   <ItemGroup>
     <Compile Include="AdminToolsPatch.cs" />
     <Compile Include="Api.cs" />
+    <Compile Include="ItemActionConnectPowerPatch.cs" />
     <Compile Include="Patch.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WorldPatch.cs" />

@@ -1,5 +1,7 @@
 ﻿using HarmonyLib;
 using System;
+using System.Collections.Generic;
+using System.Reflection;
 
 namespace AdminToolsSanitize
 {
@@ -10,7 +12,7 @@ namespace AdminToolsSanitize
 		/// If Enable will Print additional debug information this is used
 		/// during testing and developing of the MOD
 		/// </summary>
-		static bool Debug = false;
+		static bool Debug = true;
 		/// <summary>
 		/// This Patch will Help reduce the Exceptions Error Read Treasure Map
 		/// It will make sure that we check the Water inside the world and not outside
@@ -87,5 +89,6 @@ namespace AdminToolsSanitize
 			}
 			
 		}
-    }
+
+	}
 }
