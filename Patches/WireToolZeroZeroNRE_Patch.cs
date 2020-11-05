@@ -3,14 +3,18 @@ using UnityEngine;
 
 namespace AdminToolsSanitize
 {
-	[HarmonyPatch(typeof(ItemActionConnectPower))]
-	class ItemActionConnectPowerPatch
+    [HarmonyPatch(typeof(ItemActionConnectPower))]
+    class WireToolZeroZeroNRE_Patch
     {
         /// <summary>
         /// If Enable will Print additional debug information this is used
         /// during testing and developing of the MOD
         /// </summary>
+#if DEBUG
         static bool Debug = true;
+#else
+         static bool Debug = false;
+#endif
         /// <summary>
         /// Multiple Issue Happening Here.
         /// 1. As of know the Wiring tool is major broken the VectorI3 always refers to
@@ -30,7 +34,7 @@ namespace AdminToolsSanitize
         [HarmonyPatch("OnHoldingUpdate")]
         public static bool OnHoldingUpdate_prefix(ItemActionData _actionData)
         {
-            if(Debug) Log.Out($"Start OnHoldingUpdate_prefix");
+            if (Debug) Log.Out($"Start OnHoldingUpdate_prefix");
             ItemActionConnectPower.ConnectPowerData connectPowerData = (ItemActionConnectPower.ConnectPowerData)_actionData;
             Vector3i blockPos = _actionData.invData.hitInfo.hit.blockPos;
 
@@ -39,16 +43,16 @@ namespace AdminToolsSanitize
                 connectPowerData.playerUI = LocalPlayerUI.GetUIForPlayer(connectPowerData.invData.holdingEntity as EntityPlayerLocal);
             }
 
-			if (Debug) Log.Out($"blockPos - blockPos.x:{blockPos.x} blockPos.y:{blockPos.y} blockPos.z:{blockPos.z}");
-            
+            if (Debug) Log.Out($"blockPos - blockPos.x:{blockPos.x} blockPos.y:{blockPos.y} blockPos.z:{blockPos.z}");
+
             // This is bugged or more a result of the original Code trying to run the ui without checking the for nil
-			if (!connectPowerData.invData.world.CanPlaceBlockAt(blockPos, connectPowerData.invData.world.gameManager.GetPersistentLocalPlayer(), false))
+            if (!connectPowerData.invData.world.CanPlaceBlockAt(blockPos, connectPowerData.invData.world.gameManager.GetPersistentLocalPlayer(), false))
             {
                 connectPowerData.isFriendly = false;
                 connectPowerData.playerUI?.nguiWindowManager.SetLabelText(EnumNGUIWindow.PowerInfo, null);
                 return false;
             }
-			return true;
+            return true;
         }
     }
 }

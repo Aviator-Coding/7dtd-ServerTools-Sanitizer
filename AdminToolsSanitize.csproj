@@ -64,14 +64,18 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AdminToolsPatch.cs" />
+    <Compile Include="Patches\AntiDDOS_Patch.cs" />
+    <Compile Include="Patches\ServerConfigXML_Patch.cs" />
     <Compile Include="Api.cs" />
-    <Compile Include="ItemActionConnectPowerPatch.cs" />
+    <Compile Include="Debugging\BedBug_Patch.cs" />
+    <Compile Include="Patches\WireToolZeroZeroNRE_Patch.cs" />
+    <Compile Include="Debugging\ObjectiveTreasureChest_Patch.cs" />
     <Compile Include="Patch.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="WorldPatch.cs" />
+    <Compile Include="Patches\TreasureNRE_Patch.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Notes\BedBug\Notes.md" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -79,5 +83,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

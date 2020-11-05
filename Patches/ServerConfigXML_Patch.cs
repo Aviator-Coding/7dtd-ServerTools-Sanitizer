@@ -1,4 +1,4 @@
-using HarmonyLib;
+﻿using HarmonyLib;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security;
@@ -6,7 +6,7 @@ using System.Security;
 namespace AdminToolsSanitize
 {
     [HarmonyPatch(typeof(AdminTools))]
-    class AdminToolsPatch
+    class ServerConfigXML_Patch
     {
         /// <summary>
         /// 7 Days to die will write an invalid XML File if 
@@ -41,7 +41,7 @@ namespace AdminToolsSanitize
             //Clean UserPermission
             foreach (string index in ___userPermissions.Keys.ToList())
             {
-                ___userPermissions[index] = new AdminToolsClientInfo(SecurityElement.Escape(___userPermissions[index].Name), 
+                ___userPermissions[index] = new AdminToolsClientInfo(SecurityElement.Escape(___userPermissions[index].Name),
                                                                      ___userPermissions[index].SteamId,
                                                                      ___userPermissions[index].PermissionLevel);
             }
@@ -50,10 +50,10 @@ namespace AdminToolsSanitize
             //Clean Group Permissions
             foreach (string index in ___groupPermissions.Keys.ToList())
             {
-                ___groupPermissions[index] = new AdminToolsGroupPermissions(SecurityElement.Escape(___groupPermissions[index].Name), 
-                                                                            ___groupPermissions[index].SteamIdGroup, 
+                ___groupPermissions[index] = new AdminToolsGroupPermissions(SecurityElement.Escape(___groupPermissions[index].Name),
+                                                                            ___groupPermissions[index].SteamIdGroup,
                                                                             ___groupPermissions[index].PermissionLevelNormal,
-                                                                            ___groupPermissions[index].PermissionLevelMods); 
+                                                                            ___groupPermissions[index].PermissionLevelMods);
             }
 
             Log.Out("[MOD - AdminToolsSanitize] Sanitizing whitelistedUsers");
