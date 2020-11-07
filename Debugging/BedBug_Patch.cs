@@ -27,12 +27,15 @@ namespace AdminToolsSanitize
 		}
 	}
 
+	/// <summary>
+	/// Debugging Bedroll Glitch print Spawn and Bedroll Position 
+	/// </summary>
     [HarmonyPatch(typeof(GameManager))]
     class GameManager_Patch
     {
         [HarmonyPrefix]
         [HarmonyPatch("PlayerSpawnedInWorld")]
-        public static bool PlayerSpawnedInWorld(ClientInfo _cInfo, RespawnType _respawnReason, Vector3i _pos, int _entityId)
+        public static bool PlayerSpawnedInWorld_Prefix(ClientInfo _cInfo, RespawnType _respawnReason, Vector3i _pos, int _entityId)
         {
 			EntityAlive _entityAlive = GameManager.Instance.World.GetEntity(_entityId) as EntityAlive;
 			PersistentPlayerData data = GameManager.Instance.GetPersistentPlayerList().GetPlayerDataFromEntityID(_entityId);
@@ -41,4 +44,23 @@ namespace AdminToolsSanitize
         }
 
     }
+
+	[HarmonyPatch(typeof(NetPackagePlayerSpawnedInWorld))]
+	class NetPackagePlayerSpawnedInWorld_Patch
+	{
+		static AccessTools.FieldRef<NetPackagePlayerSpawnedInWorld, RespawnType> __respawnReason = AccessTools.FieldRefAccess<NetPackagePlayerSpawnedInWorld, RespawnType>("respawnReason");
+		static AccessTools.FieldRef<NetPackagePlayerSpawnedInWorld, Vector3i> __position = AccessTools.FieldRefAccess<NetPackagePlayerSpawnedInWorld, Vector3i>("position");
+		static AccessTools.FieldRef<NetPackagePlayerSpawnedInWorld, int> __entityId = AccessTools.FieldRefAccess<NetPackagePlayerSpawnedInWorld, int>("entityId");
+
+		[HarmonyPrefix]
+		[HarmonyPatch("ProcessPackage")]
+		public static bool ProcessPackage_Prefix(NetPackagePlayerSpawnedInWorld __instance, World _world, INetConnectionCallbacks _netConnectionCallback)
+		{
+			EntityAlive _entityAlive = GameManager.Instance.World.GetEntity(__entityId(__instance)) as EntityAlive;
+			PersistentPlayerData data = GameManager.Instance.GetPersistentPlayerList().GetPlayerDataFromEntityID(__entityId(__instance));
+			Log.Out($"[NetPackagePlayerSpawnedInWorld] - SenderEntityID:{__instance?.Sender.entityId} , EntityID:{__entityId(__instance)}, PlayerID:{__instance?.Sender.playerId} , SpawnPosition:{__position(__instance).ToStringNoBlanks()} , RespawnType:{__respawnReason(__instance).ToString()}, PERS-Bedroll:{data.BedrollPos.ToStringNoBlanks()} Alive-Bedroll:{_entityAlive.SpawnPoints.GetPos().ToStringNoBlanks()}");
+			return true;
+		}
+
+	}
 }
