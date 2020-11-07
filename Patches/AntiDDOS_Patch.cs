@@ -8,26 +8,119 @@ using System.Threading.Tasks;
 
 namespace AdminToolsSanitize
 {
-    [HarmonyPatch(typeof(NetworkServerLiteNetLib))]
-    class AntiDDOS_Patch
+    public class DDOSTracker
     {
 #if DEBUG
-        static bool Debug = true;
+        public static bool Debug = true;
 #else
-         static bool Debug = false;
+        public static bool Debug = false;
 #endif
         /// <summary>
         /// Keeps track of the IP
         /// </summary>
         public static Dictionary<string, int> AdressTracker = new Dictionary<string, int>();
+
         /// <summary>
         /// Maximum Connections allowed from the same IP
         /// </summary>
         public static int MaxSameConnections = 10;
+
         /// <summary>
         /// Maximum Client Connection before rejection from every CLient
         /// </summary>
         public static int MaxClientConnection = 80;
+
+        /// <summary>
+        /// Once we passed 20 Conenction per IP
+        /// The decreasing function is ignored the only way
+        /// this will get unblocked is trough the Interval Timer
+        /// this has been done to prevent really noisy ip to be unblocked
+        /// early
+        /// </summary>
+        public static int MaxConnecctionBeforeReseIgnore = 20;
+
+        /// <summary>
+        /// Defines the Cleanup Time in Minutes between every Interval
+        /// </summary>
+        public static int CleanInterval = 5;
+
+        /// <summary>
+        /// Holds the Time when the Cleanup has been last time run
+        /// </summary>
+        public static DateTime TimeLastListWipe = DateTime.Now;
+
+        /// <summary>
+        /// Will Clean the IP Tracker based on the Interval Selected up top
+        /// </summary>
+        public static void TimeBaseCleanup()
+        {
+            if (DateTime.Now.Subtract(TimeLastListWipe).TotalMinutes > CleanInterval)
+            {
+                AdressTracker.Clear();
+                TimeLastListWipe = DateTime.Now;
+                if (Debug) Log.Out($"[DDOS-MOD] TimeBaseCleanup Clear IP List");
+            }
+            else { if (Debug) Log.Out($"[DDOS-MOD] TimeBaseCleanup not quiet time yet {DateTime.Now.Subtract(TimeLastListWipe).TotalMinutes - CleanInterval} Minutes left before cleanup"); }
+        }
+
+        /// <summary>
+        /// Increases the Connection by one
+        /// If not existings creates a new Object
+        /// </summary>
+        /// <param name="ClientIP">takes the CLient IP as String eg 8.8.8.8</param>
+        public static void IncreaseCount(string ClientIP)
+        {
+            if (Debug) Log.Out($"[DDOS-MOD] Testing Address {ClientIP}");
+            //Manages the Count of the Connection per IP
+            if (AdressTracker.ContainsKey(ClientIP))
+            {
+                if (AdressTracker[ClientIP] > MaxSameConnections + 10)
+                {
+                    if (Debug) Log.Out($"[DDOS-MOD] Counter is to High Skip Increasing {ClientIP}");
+                }
+                else
+                {
+                    if (Debug) Log.Out($"[DDOS-MOD] Increase Address {ClientIP} From {AdressTracker[ClientIP]} ");
+                    AdressTracker[ClientIP]++;
+                    if (Debug) Log.Out($"[DDOS-MOD] Increase Address {ClientIP} To {AdressTracker[ClientIP]} ");
+                }
+
+            }
+            else
+            {
+                AdressTracker.Add(ClientIP, 1);
+                if (Debug) Log.Out($"[DDOS-MOD] Adress {ClientIP} Has none known Connection Add {AdressTracker[ClientIP]} ");
+            }
+        }
+
+        /// <summary>
+        /// Decreases the Amount of IP Connected 
+        /// </summary>
+        /// <param name="ClientIP">takes the CLient IP as String eg 8.8.8.8</param>
+        public static void DecreaseCount(string ClientIP)
+        {
+            if (AdressTracker.ContainsKey(ClientIP))
+            {
+                if (AdressTracker[ClientIP] > MaxConnecctionBeforeReseIgnore) return;  //ignore Resets to the Counter on Excessive Spam we will use the Timer.
+                if (Debug) Log.Out($"[DDOS-MOD] Decrease Address {ClientIP} for Disconnect! old Count {AdressTracker[ClientIP]}");
+                AdressTracker[$"{ClientIP}"]--;
+                if (Debug) Log.Out($"[DDOS-MOD] Decrease Address {ClientIP} for Disconnect! new Count {AdressTracker[ClientIP]}");
+                if (AdressTracker[ClientIP] <= 0)
+                {
+                    if (Debug) Log.Out($"[DDOS-MOD] Address {ClientIP} Count {AdressTracker[ClientIP]} is below 0 we remove the Entry");
+                    AdressTracker.Remove(ClientIP);
+                }
+            }
+            else
+            {
+                if (Debug) Log.Out($"[DDOS-MOD] DropClient Unable to find Address {ClientIP}");
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(NetworkServerLiteNetLib))]
+    class AntiDDOS_Connect_Patch
+    {
 
         /// <summary>
         /// There is an Issue where a CLient can Spam connect and disconnect request
@@ -52,45 +145,30 @@ namespace AdminToolsSanitize
         [HarmonyPatch("ConnectionRequestCheck")]
         public static bool ConnectionRequestCheck_Patch(string ___serverPassword, ConnectionRequest _request)
         {
+            // Clean List if needed
+            DDOSTracker.TimeBaseCleanup();
+
             string text = _request.RemoteEndPoint.Address.ToString();
             ClientInfoCollection ClientInfoList = SingletonMonoBehaviour<ConnectionManager>.Instance.Clients;
             string[] address = _request.RemoteEndPoint.Address.ToString().Split(':');
-            if (Debug) Log.Out($"[DDOS-MOD] Testing Address {address[0]}");
-            if (AdressTracker.ContainsKey(address[0]))
-            {
-                if (AdressTracker[address[0]] > MaxSameConnections+10)
-                {
-                    if (Debug) Log.Out($"[DDOS-MOD] Counter is to High Skip Increasing {address[0]}");
-                }
-                else
-                {
-                    if (Debug) Log.Out($"[DDOS-MOD] Increase Address {address[0]} From {AdressTracker[address[0]]} ");
-                    AdressTracker[address[0]]++;
-                    if (Debug) Log.Out($"[DDOS-MOD] Increase Address {address[0]} To {AdressTracker[address[0]]} ");
-                }
+            string ClientIP = address[0];
 
-            }
-            else
-            {
-                AdressTracker.Add(address[0], 1);
-                if (Debug) Log.Out($"[DDOS-MOD] Adress {address[0]} Has none known Connection Add {AdressTracker[address[0]]} ");
-            }
-
+            DDOSTracker.IncreaseCount(ClientIP);
 
             // Check if there are to many connections
-            if (AdressTracker[address[0]] > MaxSameConnections)
+            if (DDOSTracker.AdressTracker[ClientIP] > DDOSTracker.MaxSameConnections)
             {
-                if(AdressTracker[address[0]] < MaxSameConnections + 5)
-                    Log.Out($"[DDOS-MOD] to Many Conenctions from the Same IP {address[0]} exceeded {MaxSameConnections} Disconnecting now");
+                if (DDOSTracker.AdressTracker[ClientIP] < DDOSTracker.MaxSameConnections + 5)
+                    Log.Out($"[DDOS-MOD] to Many Conenctions from the Same IP {ClientIP} exceeded {DDOSTracker.MaxSameConnections} Disconnecting now");
                 _request.Reject();
                 return false;
             }
 
 
-            // Maximum Cleitn Connection Exceeded
-            if (ClientInfoList.Count > MaxClientConnection)
+            // Maximum Client Connection Exceeded
+            if (ClientInfoList.Count > DDOSTracker.MaxClientConnection)
             {
-                Log.Out($"[DDOS-MOD] Dropping Connection from {_request.RemoteEndPoint.Address} to Many total Connections to the Server {ClientInfoList.Count} / {MaxClientConnection} ");
+                Log.Out($"[DDOS-MOD] Dropping Connection from {_request.RemoteEndPoint.Address} to Many total Connections to the Server {ClientInfoList.Count} / {DDOSTracker.MaxClientConnection} ");
                 _request.Reject();
                 return false;
             }
@@ -109,6 +187,14 @@ namespace AdminToolsSanitize
             return false;
         }
 
+
+        /// <summary>
+        /// DropClient is called when a Player Logs out of the Game
+        /// We have decrease the Count of the Player with the Same
+        /// IP.
+        /// </summary>
+        /// <param name="_clientInfo"></param>
+        /// <returns></returns>
         [HarmonyPrefix]
         [HarmonyPatch("DropClient")]
         public static bool DropClient_Patch(ClientInfo _clientInfo)
@@ -116,21 +202,58 @@ namespace AdminToolsSanitize
             if (_clientInfo != null)
             {
                 string[] address = _clientInfo.ip.Split(':');
-                if (AdressTracker.ContainsKey($"{address[0]}"))
-                {
-                    if (Debug) Log.Out($"[DDOS-MOD] Decrease Address {address[0]} for Disconnect! old Count {AdressTracker[$"{address[0]}"]}");
-                    AdressTracker[$"{address[0]}"]--;
-                    if (Debug) Log.Out($"[DDOS-MOD] Decrease Address {address[0]} for Disconnect! new Count {AdressTracker[$"{address[0]}"]}");
-                    if (AdressTracker[$"{address[0]}"] <= 0)
-                    {
-                        if (Debug) Log.Out($"[DDOS-MOD] Address {address[0]} Count {AdressTracker[$"{address[0]}"]} is below 0 we remove the Entry");
-                        AdressTracker.Remove($"{address[0]}");
-                    }
-                }
-
+                DDOSTracker.DecreaseCount(address[0]);
             }
             return true;
         }
 
+    }
+
+
+    [HarmonyPatch(typeof(AuthorizationManager))]
+    public class AntiDDOS_AuthorizationManager_Patch
+    {
+        /// <summary>
+        /// Authorisation Denied is Triggered When a Player gets Kicked of the Server
+        /// we will decrease our count of Connection
+        /// </summary>
+        /// <param name="_cInfo"></param>
+        /// <returns></returns>
+        [HarmonyPrefix]
+        [HarmonyPatch("AuthorizationDenied")]
+        public static bool AuthorizationDenied(IAuthorizer _authorizer, ClientInfo _clientInfo, GameUtils.KickPlayerData _kickPlayerData)
+        {
+            if (DDOSTracker.Debug) Log.Out($"[DDOS-MOD] Client:{_clientInfo.ToString()} Address:{_clientInfo.ip} KickReason:{_kickPlayerData.ToString()} ");
+            string[] address = _clientInfo.ip.Split(':');
+            DDOSTracker.DecreaseCount(address[0]);
+
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// This Ensures that Server which uses
+    /// /Kick to leave get their Connection Reset
+    /// else we could end up blocking them
+    /// </summary>
+    [HarmonyPatch(typeof(GameUtils))]
+    public class AntiDDOS_GameUtils_Patch
+    {
+        /// <summary>
+        /// Authorisation Denied is Triggered When a Player gets Kicked of the Server
+        /// we will decrease our count of Connection
+        /// </summary>
+        /// <param name="_cInfo"></param>
+        /// <returns></returns>
+        [HarmonyPrefix]
+        [HarmonyPatch("KickPlayerForClientInfo")]
+        public static bool KickPlayerForClientInfo(ClientInfo _cInfo, GameUtils.KickPlayerData _kickData)
+        {
+            if (DDOSTracker.Debug) Log.Out($"[DDOS-MOD] Client:{_cInfo.ToString()} Address:{_cInfo.ip} KickReason:{_kickData.ToString()} ");
+            string[] address = _cInfo.ip.Split(':');
+            DDOSTracker.DecreaseCount(address[0]);
+
+            return true;
+        }
     }
 }
