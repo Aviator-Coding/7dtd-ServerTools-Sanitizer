@@ -66,7 +66,7 @@ namespace AdminToolsSanitize
             }
 
             Log.Out("[MOD - AdminToolsSanitize] Sanitizing whitelistedGroups");
-            //Cleam Whitelis Groups
+            //Clean Whitelist Groups
             foreach (string index in ___whitelistedGroups.Keys.ToList())
             {
                 ___whitelistedGroups[index] = new AdminToolsClientInfo(SecurityElement.Escape(___whitelistedGroups[index].Name),
